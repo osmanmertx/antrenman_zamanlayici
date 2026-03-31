@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <title>Antrenman Zamanlayıcı</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: rgba(255,255,255,0.08);
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --work: #16a34a;
+      --rest: #2563eb;
+      --idle: #7c3aed;
+      --danger: #dc2626;
+      --shadow: 0 20px 50px rgba(0,0,0,0.25);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      transition: background 0.35s ease;
+    }
+
+    body.state-idle {
+      background: linear-gradient(180deg, #111827 0%, #1f2937 100%);
+    }
+
+    body.state-work {
+      background: linear-gradient(180deg, #14532d 0%, #166534 100%);
+    }
+
+    body.state-rest {
+      background: linear-gradient(180deg, #1e3a8a 0%, #2563eb 100%);
+    }
+
+    .app {
+      width: 100%;
+      max-width: 460px;
+      background: var(--card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      text-align: center;
+    }
+
+    .subtitle {
+      margin: 0 0 22px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .inputs {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      font-size: 18px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.11);
+    }
+
+    .timer-box {
+      margin: 18px 0 16px;
+      border-radius: 22px;
+      padding: 22px 18px;
+      text-align: center;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .phase {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.92);
+      margin-bottom: 10px;
+    }
+
+    .time {
+      font-size: 72px;
+      line-height: 1;
+      font-weight: 900;
+      margin: 10px 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 14px;
+      min-height: 20px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    button {
+      border: none;
+      border-radius: 18px;
+      padding: 15px 16px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.12s ease, opacity 0.2s ease;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .start-btn {
+      background: white;
+      color: #111827;
+      grid-column: 1 / -1;
+    }
+
+    .secondary {
+      background: rgba(255,255,255,0.12);
+      color: white;
+    }
+
+    .danger {
+      background: rgba(220, 38, 38, 0.9);
+      color: white;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .badge-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .badge {
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    @media (max-width: 420px) {
+      .time {
+        font-size: 58px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body class="state-idle">
+  <main class="app">
+    <h1>Evde Zımba Timer</h1>
+    <p class="subtitle">Spor ve dinlenme sürelerini gir, başlat tuşuna bas, uygulama sırayla saysın gitsin.</p>
+
+    <section class="inputs" id="inputsSection">
+      <div class="field">
+        <label for="workInput">Spor süresi (saniye)</label>
+        <input id="workInput" type="number" min="1" inputmode="numeric" placeholder="Örn: 40" value="40" />
+      </div>
+
+      <div class="field">
+        <label for="restInput">Dinlenme süresi (saniye)</label>
+        <input id="restInput" type="number" min="1" inputmode="numeric" placeholder="Örn: 20" value="20" />
+      </div>
+    </section>
+
+    <section class="timer-box">
+      <div class="phase" id="phaseLabel">Hazır</div>
+      <div class="time" id="timeDisplay">00</div>
+      <div class="hint" id="hintText">Başlatınca önce spor süresi başlayacak.</div>
+      <div class="badge-row">
+        <div class="badge">Yeşil = Spor</div>
+        <div class="badge">Mavi = Dinlenme</div>
+      </div>
+    </section>
+
+    <section class="actions">
+      <button class="start-btn" id="startBtn">Başlat</button>
+      <button class="secondary hidden" id="pauseBtn">Duraklat</button>
+      <button class="danger hidden" id="resetBtn">Sıfırla</button>
+    </section>
+  </main>
+
+  <script>
+    const body = document.body;
+    const workInput = document.getElementById('workInput');
+    const restInput = document.getElementById('restInput');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const phaseLabel = document.getElementById('phaseLabel');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const hintText = document.getElementById('hintText');
+
+    let interval = null;
+    let timeLeft = 0;
+    let currentPhase = 'idle'; // idle | work | rest
+    let isRunning = false;
+    let workSeconds = 40;
+    let restSeconds = 20;
+
+    function formatTime(seconds) {
+      return String(seconds).padStart(2, '0');
+    }
+
+    function updateUI() {
+      body.classList.remove('state-idle', 'state-work', 'state-rest');
+      body.classList.add(`state-${currentPhase}`);
+      timeDisplay.textContent = formatTime(timeLeft);
+
+      if (currentPhase === 'work') {
+        phaseLabel.textContent = 'Spor Süresi';
+        hintText.textContent = 'Devam et koçum, şimdi çalışma zamanı.';
+      } else if (currentPhase === 'rest') {
+        phaseLabel.textContent = 'Dinlenme Süresi';
+        hintText.textContent = 'Nefeslen, birazdan tekrar yükleniyoruz.';
+      } else {
+        phaseLabel.textContent = 'Hazır';
+        hintText.textContent = 'Başlatınca önce spor süresi başlayacak.';
+      }
+    }
+
+    function validateInputs() {
+      workSeconds = parseInt(workInput.value, 10);
+      restSeconds = parseInt(restInput.value, 10);
+
+      if (!Number.isInteger(workSeconds) || workSeconds <= 0) {
+        alert('Spor süresi için 0’dan büyük bir sayı gir kanka.');
+        return false;
+      }
+
+      if (!Number.isInteger(restSeconds) || restSeconds <= 0) {
+        alert('Dinlenme süresi için 0’dan büyük bir sayı gir kanka.');
+        return false;
+      }
+
+      return true;
+    }
+
+    function switchPhase(phase) {
+      currentPhase = phase;
+      timeLeft = phase === 'work' ? workSeconds : restSeconds;
+      updateUI();
+      vibrateShort();
+    }
+
+    function tick() {
+      if (timeLeft > 0) {
+        timeLeft -= 1;
+        updateUI();
+      }
+
+      if (timeLeft === 0) {
+        if (currentPhase === 'work') {
+          switchPhase('rest');
+        } else if (currentPhase === 'rest') {
+          switchPhase('work');
+        }
+      }
+    }
+
+    function startTimer() {
+      if (!validateInputs()) return;
+      clearInterval(interval);
+      isRunning = true;
+      switchPhase('work');
+      interval = setInterval(tick, 1000);
+
+      startBtn.classList.add('hidden');
+      pauseBtn.classList.remove('hidden');
+      resetBtn.classList.remove('hidden');
+    }
+
+    function pauseTimer() {
+      if (!isRunning) return;
+      clearInterval(interval);
+      isRunning = false;
+      pauseBtn.textContent = 'Devam Et';
+      hintText.textContent = 'Duraklatıldı. Hazırsan devam et.';
+    }
+
+    function resumeTimer() {
+      if (isRunning || currentPhase === 'idle') return;
+      interval = setInterval(tick, 1000);
+      isRunning = true;
+      pauseBtn.textContent = 'Duraklat';
+      updateUI();
+    }
+
+    function resetTimer() {
+      clearInterval(interval);
+      interval = null;
+      isRunning = false;
+      currentPhase = 'idle';
+      timeLeft = 0;
+      pauseBtn.textContent = 'Duraklat';
+      startBtn.classList.remove('hidden');
+      pauseBtn.classList.add('hidden');
+      resetBtn.classList.add('hidden');
+      updateUI();
+    }
+
+    function vibrateShort() {
+      if ('vibrate' in navigator) {
+        navigator.vibrate([120, 80, 120]);
+      }
+    }
+
+    startBtn.addEventListener('click', startTimer);
+
+    pauseBtn.addEventListener('click', () => {
+      if (isRunning) {
+        pauseTimer();
+      } else {
+        resumeTimer();
+      }
+    });
+
+    resetBtn.addEventListener('click', resetTimer);
+
+    updateUI();
+  </script>
+</body>
+</html>
