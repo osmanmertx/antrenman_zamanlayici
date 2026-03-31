@@ -11,10 +11,6 @@
       --card: rgba(255,255,255,0.08);
       --text: #f8fafc;
       --muted: #cbd5e1;
-      --work: #16a34a;
-      --rest: #2563eb;
-      --idle: #7c3aed;
-      --danger: #dc2626;
       --shadow: 0 20px 50px rgba(0,0,0,0.25);
       --radius: 24px;
     }
@@ -261,6 +257,8 @@
     let isRunning = false;
     let workSeconds = 40;
     let restSeconds = 20;
+    let audioContext = null;
+    let hasStartedOnce = false;
 
     function formatTime(seconds) {
       return String(seconds).padStart(2, '0');
@@ -276,7 +274,7 @@
         hintText.textContent = 'Devam et koçum, şimdi çalışma zamanı.';
       } else if (currentPhase === 'rest') {
         phaseLabel.textContent = 'Dinlenme Süresi';
-        hintText.textContent = 'Nefeslen, birazdan tekrar yükleniyoruz.';
+        hintText.textContent = 'Nefeslen, birazdan tekrar yükleneceğiz.';
       } else {
         phaseLabel.textContent = 'Hazır';
         hintText.textContent = 'Başlatınca önce spor süresi başlayacak.';
@@ -300,16 +298,91 @@
       return true;
     }
 
+    function ensureAudioReady() {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return false;
+
+        if (!audioContext) {
+          audioContext = new AudioContextClass();
+        }
+
+        if (audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+
+        return true;
+      } catch (error) {
+        console.log('Audio başlatılamadı:', error);
+        return false;
+      }
+    }
+
+    function playTone(frequency = 880, duration = 0.22, volume = 0.16) {
+      if (!audioContext) return;
+
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+
+      gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(volume, audioContext.currentTime + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + duration);
+    }
+
+    function playPhaseSound(phase) {
+      if (!audioContext) return;
+
+      if (phase === 'work') {
+        playTone(920, 0.18, 0.18);
+        setTimeout(() => playTone(1100, 0.18, 0.18), 140);
+      } else if (phase === 'rest') {
+        playTone(620, 0.22, 0.18);
+      }
+    }
+
+    function playCountdownBeep() {
+      if (!audioContext) return;
+      playTone(1400, 0.1, 0.12);
+    }
+
+    function vibrateShort() {
+      if ('vibrate' in navigator) {
+        navigator.vibrate([180, 80, 180]);
+      }
+    }
+
+    function notifyPhaseChange(phase) {
+      vibrateShort();
+      playPhaseSound(phase);
+    }
+
     function switchPhase(phase) {
       currentPhase = phase;
       timeLeft = phase === 'work' ? workSeconds : restSeconds;
       updateUI();
-      vibrateShort();
+
+      if (hasStartedOnce) {
+        notifyPhaseChange(phase);
+      }
     }
 
     function tick() {
       if (timeLeft > 0) {
         timeLeft -= 1;
+
+        if (timeLeft > 0 && timeLeft <= 3) {
+          playCountdownBeep();
+        }
+
         updateUI();
       }
 
@@ -324,14 +397,20 @@
 
     function startTimer() {
       if (!validateInputs()) return;
+
+      ensureAudioReady();
       clearInterval(interval);
+
       isRunning = true;
+      hasStartedOnce = true;
+
       switchPhase('work');
       interval = setInterval(tick, 1000);
 
       startBtn.classList.add('hidden');
       pauseBtn.classList.remove('hidden');
       resetBtn.classList.remove('hidden');
+      pauseBtn.textContent = 'Duraklat';
     }
 
     function pauseTimer() {
@@ -344,6 +423,8 @@
 
     function resumeTimer() {
       if (isRunning || currentPhase === 'idle') return;
+
+      ensureAudioReady();
       interval = setInterval(tick, 1000);
       isRunning = true;
       pauseBtn.textContent = 'Duraklat';
@@ -356,17 +437,13 @@
       isRunning = false;
       currentPhase = 'idle';
       timeLeft = 0;
+      hasStartedOnce = false;
+
       pauseBtn.textContent = 'Duraklat';
       startBtn.classList.remove('hidden');
       pauseBtn.classList.add('hidden');
       resetBtn.classList.add('hidden');
       updateUI();
-    }
-
-    function vibrateShort() {
-      if ('vibrate' in navigator) {
-        navigator.vibrate([120, 80, 120]);
-      }
     }
 
     startBtn.addEventListener('click', startTimer);
