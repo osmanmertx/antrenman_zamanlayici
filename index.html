@@ -4,7 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
+
   <title>Antrenman Zamanlayıcı</title>
+
+  <!-- iOS APP AYARLARI -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NAZLIM">
+  <link rel="apple-touch-icon" href="icon.png">
+
   <style>
     :root {
       --bg: #0f172a;
@@ -30,7 +38,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom);
+      min-height: 100vh;
       transition: background 0.35s ease;
     }
 
@@ -49,6 +58,10 @@
     .app {
       width: 100%;
       max-width: 460px;
+      height: calc(100vh - 40px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       background: var(--card);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
@@ -100,11 +113,6 @@
       outline: none;
     }
 
-    input:focus {
-      border-color: rgba(255,255,255,0.35);
-      background: rgba(255,255,255,0.11);
-    }
-
     .timer-box {
       margin: 18px 0 16px;
       border-radius: 22px;
@@ -117,18 +125,13 @@
     .phase {
       font-size: 16px;
       font-weight: 800;
-      letter-spacing: 0.4px;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.92);
       margin-bottom: 10px;
     }
 
     .time {
       font-size: 72px;
-      line-height: 1;
       font-weight: 900;
-      margin: 10px 0;
-      font-variant-numeric: tabular-nums;
     }
 
     .hint {
@@ -141,21 +144,14 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      margin-top: 18px;
     }
 
     button {
       border: none;
       border-radius: 18px;
-      padding: 15px 16px;
+      padding: 15px;
       font-size: 16px;
       font-weight: 800;
-      cursor: pointer;
-      transition: transform 0.12s ease, opacity 0.2s ease;
-    }
-
-    button:active {
-      transform: scale(0.98);
     }
 
     .start-btn {
@@ -177,288 +173,169 @@
     .hidden {
       display: none;
     }
-
-    .badge-row {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-
-    .badge {
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 700;
-      background: rgba(255,255,255,0.1);
-      color: white;
-    }
-
-    @media (max-width: 420px) {
-      .time {
-        font-size: 58px;
-      }
-
-      h1 {
-        font-size: 24px;
-      }
-    }
   </style>
 </head>
+
 <body class="state-idle">
-  <main class="app">
-    <h1>Evde Zımba Timer</h1>
-    <p class="subtitle">Spor ve dinlenme sürelerini gir, başlat tuşuna bas, uygulama sırayla saysın gitsin.</p>
 
-    <section class="inputs" id="inputsSection">
-      <div class="field">
-        <label for="workInput">Spor süresi (saniye)</label>
-        <input id="workInput" type="number" min="1" inputmode="numeric" placeholder="Örn: 40" value="40" />
-      </div>
+<main class="app">
 
-      <div class="field">
-        <label for="restInput">Dinlenme süresi (saniye)</label>
-        <input id="restInput" type="number" min="1" inputmode="numeric" placeholder="Örn: 20" value="20" />
-      </div>
-    </section>
+<div>
+<h1>Evde Zımba Timer</h1>
 
-    <section class="timer-box">
-      <div class="phase" id="phaseLabel">Hazır</div>
-      <div class="time" id="timeDisplay">00</div>
-      <div class="hint" id="hintText">Başlatınca önce spor süresi başlayacak.</div>
-      <div class="badge-row">
-        <div class="badge">Yeşil = Spor</div>
-        <div class="badge">Mavi = Dinlenme</div>
-      </div>
-    </section>
+<div class="inputs">
+  <div class="field">
+    <label>Spor süresi</label>
+    <input id="workInput" type="number" value="40">
+  </div>
 
-    <section class="actions">
-      <button class="start-btn" id="startBtn">Başlat</button>
-      <button class="secondary hidden" id="pauseBtn">Duraklat</button>
-      <button class="danger hidden" id="resetBtn">Sıfırla</button>
-    </section>
-  </main>
+  <div class="field">
+    <label>Dinlenme süresi</label>
+    <input id="restInput" type="number" value="20">
+  </div>
+</div>
 
-  <script>
-    const body = document.body;
-    const workInput = document.getElementById('workInput');
-    const restInput = document.getElementById('restInput');
-    const startBtn = document.getElementById('startBtn');
-    const pauseBtn = document.getElementById('pauseBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const phaseLabel = document.getElementById('phaseLabel');
-    const timeDisplay = document.getElementById('timeDisplay');
-    const hintText = document.getElementById('hintText');
+<div class="timer-box">
+  <div class="phase" id="phaseLabel">Hazır</div>
+  <div class="time" id="timeDisplay">00</div>
+  <div class="hint" id="hintText"></div>
+</div>
+</div>
 
-    let interval = null;
-    let timeLeft = 0;
-    let currentPhase = 'idle'; // idle | work | rest
-    let isRunning = false;
-    let workSeconds = 40;
-    let restSeconds = 20;
-    let audioContext = null;
-    let hasStartedOnce = false;
+<div class="actions">
+  <button class="start-btn" id="startBtn">Başlat</button>
+  <button class="secondary hidden" id="pauseBtn">Duraklat</button>
+  <button class="danger hidden" id="resetBtn">Sıfırla</button>
+</div>
 
-    function formatTime(seconds) {
-      return String(seconds).padStart(2, '0');
+</main>
+
+<script>
+let audioContext = null;
+
+// iOS SES FIX
+function initAudio() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!audioContext) {
+    audioContext = new AudioContextClass();
+  }
+  if (audioContext.state === 'suspended') {
+    audioContext.resume();
+  }
+}
+
+// TOUCH FIX
+document.body.addEventListener('touchstart', initAudio, { once: true });
+
+function beep(freq = 800, dur = 0.2) {
+  if (!audioContext) return;
+
+  const osc = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+
+  osc.frequency.value = freq;
+  gain.gain.value = 0.2;
+
+  osc.connect(gain);
+  gain.connect(audioContext.destination);
+
+  osc.start();
+  osc.stop(audioContext.currentTime + dur);
+}
+
+const body = document.body;
+const startBtn = document.getElementById("startBtn");
+const pauseBtn = document.getElementById("pauseBtn");
+const resetBtn = document.getElementById("resetBtn");
+
+let interval;
+let timeLeft = 0;
+let phase = "idle";
+let work, rest;
+let running = false;
+
+function updateUI() {
+  body.className = "state-" + phase;
+  document.getElementById("timeDisplay").innerText = String(timeLeft).padStart(2,"0");
+
+  if (phase === "work") {
+    document.getElementById("phaseLabel").innerText = "Spor Süresi";
+  } else if (phase === "rest") {
+    document.getElementById("phaseLabel").innerText = "Dinlenme Süresi";
+  } else {
+    document.getElementById("phaseLabel").innerText = "Hazır";
+  }
+}
+
+function start() {
+  initAudio();
+
+  work = parseInt(document.getElementById("workInput").value);
+  rest = parseInt(document.getElementById("restInput").value);
+
+  phase = "work";
+  timeLeft = work;
+  running = true;
+
+  startBtn.classList.add("hidden");
+  pauseBtn.classList.remove("hidden");
+  resetBtn.classList.remove("hidden");
+
+  interval = setInterval(tick, 1000);
+  updateUI();
+}
+
+function tick() {
+  timeLeft--;
+
+  if (timeLeft <= 3 && timeLeft > 0) beep(1200, 0.1);
+
+  if (timeLeft <= 0) {
+    if (phase === "work") {
+      phase = "rest";
+      timeLeft = rest;
+      beep(500, 0.3);
+    } else {
+      phase = "work";
+      timeLeft = work;
+      beep(900, 0.3);
     }
+  }
 
-    function updateUI() {
-      body.classList.remove('state-idle', 'state-work', 'state-rest');
-      body.classList.add(`state-${currentPhase}`);
-      timeDisplay.textContent = formatTime(timeLeft);
+  updateUI();
+}
 
-      if (currentPhase === 'work') {
-        phaseLabel.textContent = 'Spor Süresi';
-        hintText.textContent = 'Devam et koçum, şimdi çalışma zamanı.';
-      } else if (currentPhase === 'rest') {
-        phaseLabel.textContent = 'Dinlenme Süresi';
-        hintText.textContent = 'Nefeslen, birazdan tekrar yükleneceğiz.';
-      } else {
-        phaseLabel.textContent = 'Hazır';
-        hintText.textContent = 'Başlatınca önce spor süresi başlayacak.';
-      }
-    }
+function pause() {
+  if (running) {
+    clearInterval(interval);
+    running = false;
+    pauseBtn.innerText = "Devam Et";
+  } else {
+    interval = setInterval(tick, 1000);
+    running = true;
+    pauseBtn.innerText = "Duraklat";
+  }
+}
 
-    function validateInputs() {
-      workSeconds = parseInt(workInput.value, 10);
-      restSeconds = parseInt(restInput.value, 10);
+function reset() {
+  clearInterval(interval);
+  phase = "idle";
+  timeLeft = 0;
+  running = false;
 
-      if (!Number.isInteger(workSeconds) || workSeconds <= 0) {
-        alert('Spor süresi için 0’dan büyük bir sayı gir kanka.');
-        return false;
-      }
+  startBtn.classList.remove("hidden");
+  pauseBtn.classList.add("hidden");
+  resetBtn.classList.add("hidden");
 
-      if (!Number.isInteger(restSeconds) || restSeconds <= 0) {
-        alert('Dinlenme süresi için 0’dan büyük bir sayı gir kanka.');
-        return false;
-      }
+  updateUI();
+}
 
-      return true;
-    }
+startBtn.onclick = start;
+resetBtn.onclick = reset;
+pauseBtn.onclick = pause;
 
-    function ensureAudioReady() {
-      try {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextClass) return false;
+updateUI();
+</script>
 
-        if (!audioContext) {
-          audioContext = new AudioContextClass();
-        }
-
-        if (audioContext.state === 'suspended') {
-          audioContext.resume();
-        }
-
-        return true;
-      } catch (error) {
-        console.log('Audio başlatılamadı:', error);
-        return false;
-      }
-    }
-
-    function playTone(frequency = 880, duration = 0.22, volume = 0.16) {
-      if (!audioContext) return;
-
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-
-      gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(volume, audioContext.currentTime + 0.01);
-      gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      oscillator.start();
-      oscillator.stop(audioContext.currentTime + duration);
-    }
-
-    function playPhaseSound(phase) {
-      if (!audioContext) return;
-
-      if (phase === 'work') {
-        playTone(920, 0.18, 0.18);
-        setTimeout(() => playTone(1100, 0.18, 0.18), 140);
-      } else if (phase === 'rest') {
-        playTone(620, 0.22, 0.18);
-      }
-    }
-
-    function playCountdownBeep() {
-      if (!audioContext) return;
-      playTone(1400, 0.1, 0.12);
-    }
-
-    function vibrateShort() {
-      if ('vibrate' in navigator) {
-        navigator.vibrate([180, 80, 180]);
-      }
-    }
-
-    function notifyPhaseChange(phase) {
-      vibrateShort();
-      playPhaseSound(phase);
-    }
-
-    function switchPhase(phase) {
-      currentPhase = phase;
-      timeLeft = phase === 'work' ? workSeconds : restSeconds;
-      updateUI();
-
-      if (hasStartedOnce) {
-        notifyPhaseChange(phase);
-      }
-    }
-
-    function tick() {
-      if (timeLeft > 0) {
-        timeLeft -= 1;
-
-        if (timeLeft > 0 && timeLeft <= 3) {
-          playCountdownBeep();
-        }
-
-        updateUI();
-      }
-
-      if (timeLeft === 0) {
-        if (currentPhase === 'work') {
-          switchPhase('rest');
-        } else if (currentPhase === 'rest') {
-          switchPhase('work');
-        }
-      }
-    }
-
-    function startTimer() {
-      if (!validateInputs()) return;
-
-      ensureAudioReady();
-      clearInterval(interval);
-
-      isRunning = true;
-      hasStartedOnce = true;
-
-      switchPhase('work');
-      interval = setInterval(tick, 1000);
-
-      startBtn.classList.add('hidden');
-      pauseBtn.classList.remove('hidden');
-      resetBtn.classList.remove('hidden');
-      pauseBtn.textContent = 'Duraklat';
-    }
-
-    function pauseTimer() {
-      if (!isRunning) return;
-      clearInterval(interval);
-      isRunning = false;
-      pauseBtn.textContent = 'Devam Et';
-      hintText.textContent = 'Duraklatıldı. Hazırsan devam et.';
-    }
-
-    function resumeTimer() {
-      if (isRunning || currentPhase === 'idle') return;
-
-      ensureAudioReady();
-      interval = setInterval(tick, 1000);
-      isRunning = true;
-      pauseBtn.textContent = 'Duraklat';
-      updateUI();
-    }
-
-    function resetTimer() {
-      clearInterval(interval);
-      interval = null;
-      isRunning = false;
-      currentPhase = 'idle';
-      timeLeft = 0;
-      hasStartedOnce = false;
-
-      pauseBtn.textContent = 'Duraklat';
-      startBtn.classList.remove('hidden');
-      pauseBtn.classList.add('hidden');
-      resetBtn.classList.add('hidden');
-      updateUI();
-    }
-
-    startBtn.addEventListener('click', startTimer);
-
-    pauseBtn.addEventListener('click', () => {
-      if (isRunning) {
-        pauseTimer();
-      } else {
-        resumeTimer();
-      }
-    });
-
-    resetBtn.addEventListener('click', resetTimer);
-
-    updateUI();
-  </script>
 </body>
 </html>
