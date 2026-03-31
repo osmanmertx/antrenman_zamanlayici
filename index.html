@@ -34,14 +34,14 @@
       background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
     }
 
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom);
-      min-height: 100vh;
-      transition: background 0.35s ease;
-    }
+body {
+  height: 100vh;
+  overflow: hidden; /* scroll kapat */  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom);
+}
 
     body.state-idle {
       background: linear-gradient(180deg, #111827 0%, #1f2937 100%);
@@ -55,21 +55,14 @@
       background: linear-gradient(180deg, #1e3a8a 0%, #2563eb 100%);
     }
 
-    .app {
-      width: 100%;
-      max-width: 460px;
-      height: calc(100vh - 40px);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      background: var(--card);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 22px;
-    }
+.app {
+  width: 100%;
+  max-width: 460px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
 
     h1 {
       margin: 0 0 8px;
@@ -85,11 +78,17 @@
       line-height: 1.45;
     }
 
-    .inputs {
-      display: grid;
-      gap: 14px;
-      margin-bottom: 18px;
-    }
+.inputs {
+  flex-shrink: 0;
+}
+
+.timer-box {
+  flex-grow: 1; /* ortayı doldur */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
 
     .field {
       display: flex;
